@@ -1,0 +1,19 @@
+agent_control_specification_version: 0.4.0-alpha.1
+metadata:
+  name: procurement-read_tool
+policies:
+  read_tool:
+    type: rego
+    bundle: ./policy/read_tool.rego
+    query: data.procurement.read_tool.verdict
+intervention_points:
+  pre_tool_call:
+    policy_target: $.tool_call.args
+    policy_target_kind: tool_args
+    tool_name_from: $.tool_call.name
+    policy:
+      id: read_tool
+tools:
+  read_document: {type: Tool, id: read_document}
+  create_purchase_order: {type: Tool, id: create_purchase_order}
+  send_email: {type: Tool, id: send_email}
