@@ -284,7 +284,7 @@ verdict := {"decision": "deny"} if {
   input.policy_target.value.amount &gt; 500
 }</pre></div>
       </div>
-      <footer>Microsoft's own sample policies follow the same split. Their bank-manager example (from AgentShield) blocks <code>freeze_account</code> unless admin mode is on, and denies payments with <code>amount &gt; 50000</code>: a rule on the tool and session state, and a rule on one input value. The Rego above reads <code>input.tool.id</code> because our manifest's tool catalog gives each tool an <code>id</code>; Microsoft's examples read <code>input.tool.name</code>.</footer>
+      <footer>Microsoft's own sample policies follow the same split. Their bank-manager example (<a href="https://github.com/microsoft/agent-governance-toolkit/blob/main/policy-engine/examples/from_agentshield/agents/bank-manager/policy/bank_manager.rego"><code>policy-engine/examples/from_agentshield/agents/bank-manager</code></a> in Microsoft's Agent Governance Toolkit repo) blocks <code>freeze_account</code> unless admin mode is on, and denies payments with <code>amount &gt; 50000</code>: a rule on the tool and session state, and a rule on one input value. The Rego above reads <code>input.tool.id</code> because our manifest's tool catalog gives each tool an <code>id</code>; Microsoft's examples read <code>input.tool.name</code>.</footer>
     </article>
   </section>
 
@@ -301,7 +301,7 @@ verdict := {"decision": "deny"} if {
           <tr><td>How rules are written</td><td>Conditions chosen in a form: field, operator, value or another field</td><td>Rego or Cedar code. The toolkit also ships a simpler YAML list of name, condition, action and priority</td></tr>
           <tr><td>Decisions</td><td>ALLOW, CONSTRAIN, REQUIRE_APPROVAL, BLOCK, HALT</td><td>allow, deny, transform, plus warn and escalate (deny until a person approves)</td></tr>
           <tr><td>Ordering</td><td>Priority 1–100, highest number checked first; first match wins</td><td>Written into the policy, typically an <code>else</code> chain where the first match wins</td></tr>
-          <tr><td>When nothing matches</td><td>Allow</td><td>Whatever the policy's default says. The toolkit's YAML engine denies unless <code>default_action: allow</code> is set</td></tr>
+          <tr><td>When nothing matches</td><td>Allow</td><td>Whatever the policy's default says. The toolkit's YAML engine denies unless <code>default_action: allow</code> is set (<a href="https://github.com/microsoft/agent-governance-toolkit/blob/main/agent-governance-python/agent-mesh/src/agentmesh/governance/policy.py"><code>agentmesh/governance/policy.py</code></a>, where <code>default_action</code> defaults to <code>"deny"</code>)</td></tr>
           <tr><td>Before going live</td><td>Dry-run each rule against sample inputs</td><td><code>evaluate_only</code> mode: decide on live traffic without acting</td></tr>
           <tr><td>Sharing rules across agents</td><td>No shared rule sets. Control Templates stamp the same rule onto many agents; a script or the <a href="https://github.com/OpenBox-AI/openbox-policy-studio">Policy Studio</a> can copy whole sets</td><td><code>extends</code>: a manifest can inherit parent manifests, such as a company baseline</td></tr>
           <tr><td>What is kept afterwards</td><td>Every call's inputs and verdict in a signed session record, viewable in the dashboard</td><td>Decision events that by rule leave out tool arguments. Storing and viewing them is up to you</td></tr>
