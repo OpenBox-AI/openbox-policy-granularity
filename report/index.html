@@ -284,7 +284,7 @@ verdict := {"decision": "deny"} if {
   input.policy_target.value.amount &gt; 500
 }</pre></div>
       </div>
-      <footer>Microsoft's own sample policies follow the same split. Their bank agent example blocks <code>freeze_account</code> on the tool name alone and blocks transfers with <code>amount &gt; 50000</code>: one tool-level rule, one input-level rule.</footer>
+      <footer>Microsoft's own sample policies follow the same split. Their bank-manager example (from AgentShield) blocks <code>freeze_account</code> unless admin mode is on, and denies payments with <code>amount &gt; 50000</code>: a rule on the tool and session state, and a rule on one input value. The Rego above reads <code>input.tool.id</code> because our manifest's tool catalog gives each tool an <code>id</code>; Microsoft's examples read <code>input.tool.name</code>.</footer>
     </article>
   </section>
 
@@ -300,10 +300,10 @@ verdict := {"decision": "deny"} if {
           <tr><td>What a rule can see</td><td>The tool name and every input (<code>activity_input</code>)</td><td>The tool name and every argument (<code>policy_target</code>), plus anything the host adds</td></tr>
           <tr><td>How rules are written</td><td>Conditions chosen in a form: field, operator, value or another field</td><td>Rego or Cedar code. The toolkit also ships a simpler YAML list of name, condition, action and priority</td></tr>
           <tr><td>Decisions</td><td>ALLOW, CONSTRAIN, REQUIRE_APPROVAL, BLOCK, HALT</td><td>allow, deny, transform, plus warn and escalate (deny until a person approves)</td></tr>
-          <tr><td>Ordering</td><td>Priority 1–100, first match wins</td><td>Written into the policy, typically an <code>else</code> chain where the first match wins</td></tr>
+          <tr><td>Ordering</td><td>Priority 1–100, highest number checked first; first match wins</td><td>Written into the policy, typically an <code>else</code> chain where the first match wins</td></tr>
           <tr><td>When nothing matches</td><td>Allow</td><td>Whatever the policy's default says. The toolkit's YAML engine denies unless <code>default_action: allow</code> is set</td></tr>
           <tr><td>Before going live</td><td>Dry-run each rule against sample inputs</td><td><code>evaluate_only</code> mode: decide on live traffic without acting</td></tr>
-          <tr><td>Sharing rules across agents</td><td>Not built in. Copy rules to each agent (a script or the Policy Studio)</td><td><code>extends</code>: a manifest can inherit parent manifests, such as a company baseline</td></tr>
+          <tr><td>Sharing rules across agents</td><td>No shared rule sets. Control Templates stamp the same rule onto many agents; a script or the <a href="https://github.com/ash-krnl/openbox-policy-studio">Policy Studio</a> can copy whole sets</td><td><code>extends</code>: a manifest can inherit parent manifests, such as a company baseline</td></tr>
           <tr><td>What is kept afterwards</td><td>Every call's inputs and verdict in a signed session record, viewable in the dashboard</td><td>Decision events that by rule leave out tool arguments. Storing and viewing them is up to you</td></tr>
           <tr><td>Maturity</td><td>Running product</td><td>Draft specification, alpha runtime (0.4.0-alpha)</td></tr>
         </tbody>
@@ -317,7 +317,7 @@ verdict := {"decision": "deny"} if {
       <li><b>The concern about thousands of rules isn't specific to OpenBox.</b> It applies to any tool that can read inputs, and Microsoft's own model handles it the same way: one rule per control, with inputs read only when a value decides the outcome. In both products, adding tenants doesn't add rules.</li>
       <li><b>OpenBox rules follow the model the industry is standardising on.</b> Each rule here translated one to one into an ACS policy and gave the same verdict on every call. Rules written for OpenBox today don't lock you into a policy model nobody else uses.</li>
       <li><b>What the standard leaves to you, OpenBox provides.</b> ACS defines the decision. Where rules are stored, who can change them, how they are tested, and what record is kept are left to whoever runs it. OpenBox covers those: rules managed per agent, a dry-run before each change, and a signed record that keeps the input behind each verdict. ACS's events deliberately leave those inputs out.</li>
-      <li><b>One gap to plan for.</b> ACS can inherit a shared baseline from a parent manifest. OpenBox has no shared rule sets yet, so agents that share controls each get their own copy, applied by script or by the Policy Studio.</li>
+      <li><b>One gap to plan for.</b> ACS can inherit a shared baseline from a parent manifest. OpenBox has no shared rule sets yet, so agents that share controls each get their own copy, applied from a Control Template, by script or by the <a href="https://github.com/ash-krnl/openbox-policy-studio">Policy Studio</a>.</li>
     </ul>
   </section>
 
@@ -362,9 +362,9 @@ verdict := {"decision": "deny"} if {
   <section>
     <h2>What to know</h2>
     <ul class="limits">
-      <li><b>Rules belong to an agent.</b> There are no org-wide or role-wide policy rules today. Agents that should share a control set each get the same rules. That's a short script against the rules API (this demo applies its policy sets that way), and the Policy Studio can generate the rules from a contract.</li>
+      <li><b>Rules belong to an agent.</b> There are no org-wide or role-wide policy rules today. Agents that should share a control set each get the same rules. That's a short script against the rules API (this demo applies its policy sets that way), and the <a href="https://github.com/ash-krnl/openbox-policy-studio">Policy Studio</a> (an OpenBox tool that turns an NDA into policy rules) can generate them from a contract. For a single rule, the dashboard's Control Templates stamp it onto each agent.</li>
       <li><b>Calls that match no rule are allowed.</b> Write explicit BLOCK or REQUIRE_APPROVAL rules for what must not happen. Every rule needs at least one condition. To match every call, use a condition that is always true, such as <code>activity_type exists</code>.</li>
-      <li><b>Numeric comparisons need numbers.</b> <code>amount &gt; 500</code> works when the tool receives a number. If a tool passes amounts as text (<code>"600"</code>), convert them in the tool's signature first.</li>
+      <li><b>Numeric comparisons need numbers.</b> <code>amount &gt; 500</code> works when the tool receives a number. If a tool passes amounts as text (<code>"100"</code>), the policy engine sorts text above every number, so <code>"100" &gt; 500</code> is true and every such call is blocked. Convert amounts to numbers in the tool's signature first.</li>
       <li><b>Test a rule before it goes live.</b> Each rule can be dry-run against sample inputs before activation; the demo checks 499, 500 and 501. A dry-run tests one rule on its own, not its interaction with the agent's other rules.</li>
     </ul>
   </section>
